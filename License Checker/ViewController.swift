@@ -1,17 +1,27 @@
 import UIKit
 import AVFoundation
 import Vision
+import CoreImage
 
 class ViewController: UIViewController {
 
     var captureSession: AVCaptureSession!
     var previewLayer: AVCaptureVideoPreviewLayer!
-    var authorizedPlates = ["ZVX967"]
+    var authorizedPlates = ["CD 80519", "ZVX 967"]
     var greenRectView: UIView!
     var redRectView: UIView!
     var overlayView: UIView!
     var lastDetectionTime = Date()
     var textLabel: UILabel!
+    var videoDimensions: CMVideoDimensions!
+    var downscaledImageView: UIImageView!
+    
+    var videoX: CGFloat = 0
+    var videoY: CGFloat = 0
+    var videoW: CGFloat = 500
+    var videoH: CGFloat = 500
+    
+    var whRatio: CGFloat = 3.5
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -57,13 +67,13 @@ class ViewController: UIViewController {
         } catch {
             return
         }
-
+        
         if captureSession.canAddInput(videoInput) {
             captureSession.addInput(videoInput)
         } else {
             return
         }
-
+        
         let videoOutput = AVCaptureVideoDataOutput()
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
         if captureSession.canAddOutput(videoOutput) {
@@ -72,55 +82,114 @@ class ViewController: UIViewController {
             return
         }
 
+        // Capture video dimensions
+        let formatDescription = videoCaptureDevice.activeFormat.formatDescription
+        videoDimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+
         previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.frame = view.layer.bounds
         previewLayer.videoGravity = .resizeAspectFill
+
+        previewLayer.frame = view.bounds
         view.layer.addSublayer(previewLayer)
 
         captureSession.startRunning()
         
+        
+        
+//        if view.bounds.width > view.bounds.height {
+//            previewLayer.setAffineTransform(CGAffineTransform(rotationAngle: -1 * (.pi / 2)))
+//        }
+        
         setupOverlayViews()
         setupRegionOverlay()
         setupTextLabel()
+        setupDownscaledImageView()
+    }
+    
+    func setupDownscaledImageView() {
+        downscaledImageView = UIImageView()
+        downscaledImageView.frame = CGRect(x: view.bounds.width - 210, y: view.bounds.height - 120, width: 200, height: 200 / whRatio)
+        downscaledImageView.contentMode = .scaleAspectFit
+        downscaledImageView.layer.borderWidth = 1
+        downscaledImageView.layer.borderColor = UIColor.white.cgColor
+        view.addSubview(downscaledImageView)
     }
 
     func setupOverlayViews() {
-        greenRectView = UIView(frame: CGRect(x: 10, y: 50, width: 50, height: 50))
-        greenRectView.backgroundColor = .green
-        greenRectView.isHidden = true
-        view.addSubview(greenRectView)
 
         redRectView = UIView(frame: CGRect(x: 10, y: 50, width: 50, height: 50))
         redRectView.backgroundColor = .red
-        redRectView.isHidden = true
         view.addSubview(redRectView)
+        
+        greenRectView = UIView(frame: CGRect(x: 10, y: 50, width: 50, height: 50))
+        greenRectView.backgroundColor = .green
+        greenRectView.layer.opacity = 0
+        view.addSubview(greenRectView)
     }
     
+    func cameraToScreen(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+        let sW = CGFloat(view.bounds.width)
+        let sH = CGFloat(view.bounds.height)
+        let vW = CGFloat(videoDimensions.width)
+        let vH = CGFloat(videoDimensions.height)
+
+        let screenAspectRatio = sW / sH
+        let videoAspectRatio = vW / vH
+        
+        let scaleX: CGFloat
+        let scaleY: CGFloat
+        
+        if screenAspectRatio > videoAspectRatio {
+            let scaleFactor = sH / vH
+            scaleX = scaleFactor
+            scaleY = scaleFactor
+        } else {
+            let scaleFactor = sW / vW
+            scaleX = scaleFactor
+            scaleY = scaleFactor
+        }
+        
+        let offsetX = (sW - vW * scaleX) / 2.0
+        let offsetY = (sH - vH * scaleY) / 2.0
+        
+        let screenX = (x * scaleX) + offsetX
+        let screenY = (y * scaleY) + offsetY
+        
+        return CGPoint(x: screenX, y: screenY)
+    }
+
     func setupRegionOverlay() {
-        overlayView = UIView(frame: view.bounds)
-        overlayView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        overlayView.isUserInteractionEnabled = false
+        let overlay = UIView(frame: view.bounds)
+        overlay.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        overlay.isUserInteractionEnabled = false
 
-        // Set the aspect ratio to 3x1
-        let aspectRatio: CGFloat = 3.0 / 1.0
-        let regionWidth = view.bounds.width * 0.75
-        let regionHeight = regionWidth / aspectRatio
-        let regionX = (view.bounds.width - regionWidth) / 2.0
-        let regionY = (view.bounds.height - regionHeight) / 2.0
+        let vW = CGFloat(videoDimensions.width)
+        let vH = CGFloat(videoDimensions.height)
+        videoX = vW * 0.25
+        videoW = vW * 0.5
+        videoH = videoW / whRatio
+        videoY = (vH - videoH)/2
 
-        let regionOfInterestPath = UIBezierPath(rect: CGRect(x: regionX, y: regionY+120, width: regionWidth, height: regionHeight))
-        let overlayPath = UIBezierPath(rect: overlayView.bounds)
+        let screenPoint = cameraToScreen(videoX, videoY)
+        let otherPoint = cameraToScreen(videoX + videoW, videoY + videoH)
+
+        let regionRect = CGRect(x: screenPoint.x, y: screenPoint.y, width: otherPoint.x - screenPoint.x, height: otherPoint.y - screenPoint.y)
+        let cornerRadius: CGFloat = 20
+        let regionOfInterestPath = UIBezierPath(roundedRect: regionRect, cornerRadius: cornerRadius)
+
+        let overlayPath = UIBezierPath(rect: overlay.bounds)
         overlayPath.append(regionOfInterestPath)
         overlayPath.usesEvenOddFillRule = true
 
         let maskLayer = CAShapeLayer()
         maskLayer.path = overlayPath.cgPath
         maskLayer.fillRule = .evenOdd
-        overlayView.layer.mask = maskLayer
+        overlay.layer.mask = maskLayer
 
-        view.addSubview(overlayView)
+        view.addSubview(overlay)
+        self.overlayView = overlay
     }
-
+    
     func setupTextLabel() {
         textLabel = UILabel()
         textLabel.frame = CGRect(x: view.bounds.width - 150, y: 50, width: 140, height: 40)
@@ -128,6 +197,7 @@ class ViewController: UIViewController {
         textLabel.textColor = .white
         textLabel.textAlignment = .center
         textLabel.text = ""
+        textLabel.layer.cornerRadius = 5
         view.addSubview(textLabel)
     }
 
@@ -135,11 +205,11 @@ class ViewController: UIViewController {
         DispatchQueue.main.async {
             self.textLabel.text = text
             if self.authorizedPlates.contains(text) {
-                self.greenRectView.isHidden = false
-                self.redRectView.isHidden = true
+                self.greenRectView.layer.opacity = 1
             } else {
-                self.greenRectView.isHidden = true
-                self.redRectView.isHidden = false
+                if self.greenRectView.layer.opacity != 0 {
+                    self.greenRectView.layer.opacity -= 0.1
+                }
             }
         }
     }
@@ -149,39 +219,146 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard Date().timeIntervalSince(lastDetectionTime) >= 0.1 else { return }
         lastDetectionTime = Date()
-        
+
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
-        // Adjust the orientation based on the device's orientation
         if let connection = output.connections.first {
             if connection.isVideoOrientationSupported {
                 connection.videoOrientation = getVideoOrientation()
             }
         }
 
-        let request = VNRecognizeTextRequest(completionHandler: { (request, error) in
-            guard let results = request.results as? [VNRecognizedTextObservation] else { return }
-
-            for result in results {
-                guard let candidate = result.topCandidates(1).first else { continue }
-                let detectedText = candidate.string
-                self.handleDetectedText(detectedText)
-            }
-        })
-
-        // Update regionOfInterest to match the 3x1 aspect ratio
-        let regionOfInterest = CGRect(
-            x: 0.125,
-            y: 0.25,
-            width: 0.75,
-            height: 0.75 / (3.0 / 1.0)
-        )
-        request.regionOfInterest = regionOfInterest
-
-        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
-        try? imageRequestHandler.perform([request])
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        
+        let bufferWidth = CGFloat(CVPixelBufferGetWidth(pixelBuffer))
+        let bufferHeight = CGFloat(CVPixelBufferGetHeight(pixelBuffer))
+        videoX = bufferWidth * 0.25
+        videoW = bufferWidth * 0.5
+        videoH = videoW / whRatio
+        videoY = (bufferHeight - videoH)/2
+        
+        let roiRect = CGRect(x: videoX, y: videoY, width: videoW, height: videoH)
+        let croppedCIImage = ciImage.cropped(to: roiRect)
+        
+        let downscaleTransform = CGAffineTransform(scaleX: 0.5, y: 0.5)
+        let downscaledCIImage = croppedCIImage.transformed(by: downscaleTransform)
+        let newCIImage = createGreenBlueBWImage(from: downscaledCIImage)!
+        
+        DispatchQueue.main.async {
+            let downscaledUIImage = self.convertCIImageToUIImage(ciImage: newCIImage)
+            self.downscaledImageView.image = downscaledUIImage
+        }
+        
+        let context = CIContext()
+        if let cgImage = context.createCGImage(newCIImage, from: newCIImage.extent) {
+            
+            let request = VNRecognizeTextRequest(completionHandler: { (request, error) in
+                guard let results = request.results as? [VNRecognizedTextObservation] else { return }
+                
+                var anyGood = false
+                var lastThing = ""
+                for result in results {
+                    guard let candidate = result.topCandidates(1).first else { continue }
+                    let detectedText = candidate.string
+                    if self.authorizedPlates.contains(detectedText) {
+                        anyGood = true
+                        lastThing = detectedText
+                    }
+                    if !anyGood {
+                        lastThing = detectedText
+                    }
+                }
+                self.handleDetectedText(lastThing)
+            })
+            
+            let imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            try? imageRequestHandler.perform([request])
+        }
     }
     
+    func createWeightedBWImage(from downscaledCIImage: CIImage) -> CIImage? {
+        let context = CIContext()
+        
+        let redFilter = CIFilter(name: "CIColorMatrix")!
+        redFilter.setValue(downscaledCIImage, forKey: kCIInputImageKey)
+        redFilter.setValue(CIVector(x: 1, y: 0, z: 0, w: 0), forKey: "inputRVector")
+        redFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputGVector")
+        redFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputBVector")
+        redFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
+        let redCIImage = redFilter.outputImage!.applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 0, kCIInputBrightnessKey: 0, kCIInputContrastKey: 1])
+        
+        let greenFilter = CIFilter(name: "CIColorMatrix")!
+        greenFilter.setValue(downscaledCIImage, forKey: kCIInputImageKey)
+        greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputRVector")
+        greenFilter.setValue(CIVector(x: 0, y: 1, z: 0, w: 0), forKey: "inputGVector")
+        greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputBVector")
+        greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
+        let greenCIImage = greenFilter.outputImage!.applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 0, kCIInputBrightnessKey: 0, kCIInputContrastKey: 1])
+        
+        let blueFilter = CIFilter(name: "CIColorMatrix")!
+        blueFilter.setValue(downscaledCIImage, forKey: kCIInputImageKey)
+        blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputRVector")
+        blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputGVector")
+        blueFilter.setValue(CIVector(x: 0, y: 0, z: 1, w: 0), forKey: "inputBVector")
+        blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
+        let blueCIImage = blueFilter.outputImage!.applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 0, kCIInputBrightnessKey: 0, kCIInputContrastKey: 1])
+        
+        let redWeightedImage = redCIImage.applyingFilter("CIBlendWithAlphaMask", parameters: [kCIInputImageKey: redCIImage, kCIInputBackgroundImageKey: CIImage(color: .black).cropped(to: downscaledCIImage.extent), kCIInputMaskImageKey: CIImage(color: .white).cropped(to: downscaledCIImage.extent)])
+        let greenWeightedImage = greenCIImage.applyingFilter("CIBlendWithAlphaMask", parameters: [kCIInputImageKey: greenCIImage, kCIInputBackgroundImageKey: CIImage(color: .black).cropped(to: downscaledCIImage.extent), kCIInputMaskImageKey: CIImage(color: .white).cropped(to: downscaledCIImage.extent)])
+        let blueWeightedImage = blueCIImage.applyingFilter("CIBlendWithAlphaMask", parameters: [kCIInputImageKey: blueCIImage, kCIInputBackgroundImageKey: CIImage(color: .black).cropped(to: downscaledCIImage.extent), kCIInputMaskImageKey: CIImage(color: .white).cropped(to: downscaledCIImage.extent)])
+        
+        let redBlend = CIFilter(name: "CIBlendWithAlphaMask")!
+        redBlend.setValue(redWeightedImage, forKey: kCIInputImageKey)
+        redBlend.setValue(greenWeightedImage, forKey: kCIInputBackgroundImageKey)
+        redBlend.setValue(blueCIImage, forKey: kCIInputMaskImageKey)
+        let intermediateImage = redBlend.outputImage!
+
+        let finalFilter = CIFilter(name: "CIBlendWithAlphaMask")!
+        finalFilter.setValue(intermediateImage, forKey: kCIInputImageKey)
+        finalFilter.setValue(CIImage(color: .black).cropped(to: downscaledCIImage.extent), forKey: kCIInputBackgroundImageKey)
+        finalFilter.setValue(CIImage(color: .white).cropped(to: downscaledCIImage.extent), forKey: kCIInputMaskImageKey)
+
+        return finalFilter.outputImage?.cropped(to: downscaledCIImage.extent)
+    }
+    
+    func createGreenBlueBWImage(from downscaledCIImage: CIImage) -> CIImage? {
+        let context = CIContext()
+        
+        let greenFilter = CIFilter(name: "CIColorMatrix")!
+        greenFilter.setValue(downscaledCIImage, forKey: kCIInputImageKey)
+        greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputRVector") // Ignore red
+        greenFilter.setValue(CIVector(x: 0, y: 1, z: 0, w: 0), forKey: "inputGVector")
+        greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputBVector")
+        greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
+        let greenCIImage = greenFilter.outputImage!.applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 0, kCIInputBrightnessKey: 0, kCIInputContrastKey: 1])
+        
+        let blueFilter = CIFilter(name: "CIColorMatrix")!
+        blueFilter.setValue(downscaledCIImage, forKey: kCIInputImageKey)
+        blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputRVector") // Ignore red
+        blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputGVector")
+        blueFilter.setValue(CIVector(x: 0, y: 0, z: 1, w: 0), forKey: "inputBVector")
+        blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
+        let blueCIImage = blueFilter.outputImage!.applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 0, kCIInputBrightnessKey: 0, kCIInputContrastKey: 1])
+        
+        let greenWeightedImage = greenCIImage.applyingFilter("CIBlendWithAlphaMask", parameters: [kCIInputImageKey: greenCIImage, kCIInputBackgroundImageKey: CIImage(color: .black).cropped(to: downscaledCIImage.extent), kCIInputMaskImageKey: CIImage(color: .white).cropped(to: downscaledCIImage.extent)])
+        let blueWeightedImage = blueCIImage.applyingFilter("CIBlendWithAlphaMask", parameters: [kCIInputImageKey: blueCIImage, kCIInputBackgroundImageKey: CIImage(color: .black).cropped(to: downscaledCIImage.extent), kCIInputMaskImageKey: CIImage(color: .white).cropped(to: downscaledCIImage.extent)])
+        
+        let combinedImageFilter = CIFilter(name: "CISourceOverCompositing")!
+        combinedImageFilter.setValue(greenWeightedImage, forKey: kCIInputImageKey)
+        combinedImageFilter.setValue(blueWeightedImage, forKey: kCIInputBackgroundImageKey)
+        let combinedCIImage = combinedImageFilter.outputImage!
+
+        return combinedCIImage.cropped(to: downscaledCIImage.extent)
+    }
+
+    func convertCIImageToUIImage(ciImage: CIImage) -> UIImage? {
+        let context = CIContext(options: nil)
+        if let cgImage = context.createCGImage(ciImage, from: ciImage.extent) {
+            return UIImage(cgImage: cgImage)
+        }
+        return nil
+    }
+
     func getVideoOrientation() -> AVCaptureVideoOrientation {
         switch UIDevice.current.orientation {
         case .portrait:
