@@ -21,7 +21,9 @@ class ViewController: UIViewController {
     var videoW: CGFloat = 500
     var videoH: CGFloat = 500
     
-    var whRatio: CGFloat = 3.5
+    var whRatio: CGFloat = 2
+    
+    var shouldDisplayPreview = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -103,8 +105,27 @@ class ViewController: UIViewController {
         setupOverlayViews()
         setupRegionOverlay()
         setupTextLabel()
-        setupDownscaledImageView()
+        if shouldDisplayPreview {
+            setupDownscaledImageView()
+        }
+        setupSettingsButton()
     }
+    
+    func setupSettingsButton(){
+        let settingsButton = UIButton(frame: CGRect(x: 50, y: view.frame.height - 100, width: 50, height: 50))
+        settingsButton.addTarget(self, action: #selector(self.SettingsButton(sender:)), for: .touchUpInside)
+        view.addSubview(settingsButton)
+        
+        let settingsImage = UIImageView(frame: CGRect(x: 60, y: view.frame.height - 90, width: 30, height: 30))
+        settingsImage.image = UIImage(systemName: "gearshape")
+        settingsImage.tintColor = .label
+        settingsImage.contentMode = .scaleAspectFit
+        view.addSubview(settingsImage)
+    }
+    
+    @objc func SettingsButton(sender: UIButton){
+            performSegue(withIdentifier: "showSettings", sender: nil)
+        }
     
     func setupDownscaledImageView() {
         downscaledImageView = UIImageView()
@@ -117,11 +138,13 @@ class ViewController: UIViewController {
 
     func setupOverlayViews() {
 
-        redRectView = UIView(frame: CGRect(x: 10, y: 50, width: 50, height: 50))
+        redRectView = UIView(frame: CGRect(x: 60, y: 60, width: 40, height: 40))
+        redRectView.layer.cornerRadius = 10
         redRectView.backgroundColor = .red
         view.addSubview(redRectView)
         
-        greenRectView = UIView(frame: CGRect(x: 10, y: 50, width: 50, height: 50))
+        greenRectView = UIView(frame: CGRect(x: 60, y: 60, width: 40, height: 40))
+        greenRectView.layer.cornerRadius = 10
         greenRectView.backgroundColor = .green
         greenRectView.layer.opacity = 0
         view.addSubview(greenRectView)
@@ -174,7 +197,7 @@ class ViewController: UIViewController {
         let otherPoint = cameraToScreen(videoX + videoW, videoY + videoH)
 
         let regionRect = CGRect(x: screenPoint.x, y: screenPoint.y, width: otherPoint.x - screenPoint.x, height: otherPoint.y - screenPoint.y)
-        let cornerRadius: CGFloat = 20
+        let cornerRadius: CGFloat = 10
         let regionOfInterestPath = UIBezierPath(roundedRect: regionRect, cornerRadius: cornerRadius)
 
         let overlayPath = UIBezierPath(rect: overlay.bounds)
@@ -191,9 +214,13 @@ class ViewController: UIViewController {
     }
     
     func setupTextLabel() {
+        let backgroundColor = UIView(frame: CGRect(x: 110, y: 60, width: view.bounds.width - 170, height: 40))
+        backgroundColor.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        backgroundColor.layer.cornerRadius = 10
+        view.addSubview(backgroundColor)
         textLabel = UILabel()
-        textLabel.frame = CGRect(x: view.bounds.width - 150, y: 50, width: 140, height: 40)
-        textLabel.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        textLabel.frame = CGRect(x: 110, y: 50 + 10, width: view.bounds.width - 170, height: 40)
+        //textLabel.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         textLabel.textColor = .white
         textLabel.textAlignment = .center
         textLabel.text = ""
@@ -241,16 +268,21 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         let croppedCIImage = ciImage.cropped(to: roiRect)
         
         let downscaleTransform = CGAffineTransform(scaleX: 0.5, y: 0.5)
-        let downscaledCIImage = croppedCIImage.transformed(by: downscaleTransform)
-        let newCIImage = createGreenBlueBWImage(from: downscaledCIImage)!
+        var downscaledCIImage = croppedCIImage.transformed(by: downscaleTransform)
+        //downscaledCIImage = increaseContrast(of: downscaledCIImage, contrast: 2)!
+        downscaledCIImage = enhanceRedText(in: downscaledCIImage)!
+        downscaledCIImage = enhanceRedText(in: downscaledCIImage)!
+        //downscaledCIImage = increaseContrast(of: downscaledCIImage, contrast: 2)!
         
-        DispatchQueue.main.async {
-            let downscaledUIImage = self.convertCIImageToUIImage(ciImage: newCIImage)
-            self.downscaledImageView.image = downscaledUIImage
+        if shouldDisplayPreview {
+            DispatchQueue.main.async {
+                let downscaledUIImage = self.convertCIImageToUIImage(ciImage: downscaledCIImage)
+                self.downscaledImageView.image = downscaledUIImage
+            }
         }
         
         let context = CIContext()
-        if let cgImage = context.createCGImage(newCIImage, from: newCIImage.extent) {
+        if let cgImage = context.createCGImage(downscaledCIImage, from: downscaledCIImage.extent) {
             
             let request = VNRecognizeTextRequest(completionHandler: { (request, error) in
                 guard let results = request.results as? [VNRecognizedTextObservation] else { return }
@@ -349,6 +381,51 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         let combinedCIImage = combinedImageFilter.outputImage!
 
         return combinedCIImage.cropped(to: downscaledCIImage.extent)
+    }
+    
+    func enhanceRedText(in image: CIImage) -> CIImage? {
+        // Create a Core Image context
+        let context = CIContext(options: nil)
+        
+        // Step 1: Increase saturation to enhance red colors
+        guard let saturationFilter = CIFilter(name: "CIColorControls") else { return nil }
+        saturationFilter.setValue(image, forKey: kCIInputImageKey)
+        saturationFilter.setValue(1.5, forKey: kCIInputSaturationKey)  // Increase saturation
+        saturationFilter.setValue(0.0, forKey: kCIInputBrightnessKey)   // No change to brightness
+        saturationFilter.setValue(1.0, forKey: kCIInputContrastKey)     // Adjust contrast as needed
+        
+        guard let saturatedImage = saturationFilter.outputImage else { return nil }
+        
+        // Step 2: Apply hue adjustment to emphasize reds
+        guard let hueFilter = CIFilter(name: "CIHueAdjust") else { return nil }
+        hueFilter.setValue(saturatedImage, forKey: kCIInputImageKey)
+        hueFilter.setValue(0.0, forKey: kCIInputAngleKey)  // Keep hue as-is for red
+
+        guard let hueAdjustedImage = hueFilter.outputImage else { return nil }
+        
+        // Step 3: Brighten the white areas
+        guard let exposureFilter = CIFilter(name: "CIExposureAdjust") else { return nil }
+        exposureFilter.setValue(hueAdjustedImage, forKey: kCIInputImageKey)
+        exposureFilter.setValue(0.7, forKey: kCIInputEVKey)  // Increase exposure to brighten white
+        
+        guard let brightenedImage = exposureFilter.outputImage else { return nil }
+
+        // Render the final image
+        return brightenedImage
+    }
+    
+    func increaseContrast(of inputImage: CIImage, contrast: Float) -> CIImage? {
+        // Apply the CIColorControls filter to adjust contrast
+        let contrastFilter = CIFilter(name: "CIColorControls")
+        contrastFilter?.setValue(inputImage, forKey: kCIInputImageKey)
+        contrastFilter?.setValue(contrast, forKey: kCIInputContrastKey) // Default contrast is 1.0, values > 1 increase contrast
+
+        // Get the output image from the filter
+        guard let outputImage = contrastFilter?.outputImage else {
+            return nil
+        }
+
+        return outputImage
     }
 
     func convertCIImageToUIImage(ciImage: CIImage) -> UIImage? {
