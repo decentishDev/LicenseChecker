@@ -450,4 +450,8 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
             return .portrait
         }
     }
+    
+    @IBAction func cancel (_ unwindSegue: UIStoryboardSegue){
+            
+    }
 }
