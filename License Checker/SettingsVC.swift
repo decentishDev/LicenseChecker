@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SettingsVC: UIViewController {
+class SettingsVC: UIViewController, UIDocumentPickerDelegate {
 
     @IBOutlet weak var sizeSlider: UISlider!
     @IBOutlet weak var widthRatioField: UITextField!
@@ -75,13 +75,40 @@ class SettingsVC: UIViewController {
     
     @IBAction func datasetPressed(_ sender: UIButton) {
         if dataset.isEmpty {
-            //upload file
-        }else{
+            let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [.commaSeparatedText], asCopy: true)
+            documentPicker.delegate = self
+            present(documentPicker, animated: true, completion: nil)
+            datasetButton.setTitle("Remove", for: .normal)
+        } else {
             dataset.removeAll()
             datasetButton.setTitle("Upload", for: .normal)
         }
         save()
     }
+    
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        if let fileURL = urls.first {
+            do {
+                let fileContent = try String(contentsOf: fileURL, encoding: .utf8)
+                dataset = parseCSV(fileContent)
+                print("File content: \(fileContent)")
+            } catch {
+                print("Error reading file: \(error)")
+            }
+        }
+    }
+    
+    func parseCSV(_ content: String) -> [[String]] {
+        print(content)
+        var result: [[String]] = []
+        let rows = content.components(separatedBy: "\n")
+        for row in rows {
+            let columns = row.components(separatedBy: ",")
+            result.append(columns)
+        }
+        return result
+    }
+
     
     func save(){
         defaults.set([

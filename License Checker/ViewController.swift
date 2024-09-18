@@ -5,9 +5,11 @@ import CoreImage
 
 class ViewController: UIViewController {
 
+    let defaults = UserDefaults.standard
+    
     var captureSession: AVCaptureSession!
     var previewLayer: AVCaptureVideoPreviewLayer!
-    var authorizedPlates = ["CD 80519", "ZVX 967"]
+    var authorizedPlates: [String] = []
     var greenRectView: UIView!
     var redRectView: UIView!
     var overlayView: UIView!
@@ -21,6 +23,7 @@ class ViewController: UIViewController {
     var videoW: CGFloat = 500
     var videoH: CGFloat = 500
     
+    var padding = 0.25
     var whRatio: CGFloat = 2
     
     var shouldDisplayPreview = false
@@ -35,6 +38,17 @@ class ViewController: UIViewController {
 
         switch status {
         case .authorized:
+            if let data = defaults.object(forKey: "settings") as? [String: Any]{
+                padding = data["padding"]! as! CGFloat
+                whRatio = (data["width"]! as! CGFloat) / (data["height"]! as! CGFloat)
+                authorizedPlates = (data["dataset"]! as! [[String]])[0]
+                if authorizedPlates.isEmpty {
+                    
+                }
+            }else{
+                padding = 0.25
+                whRatio = 2
+            }
             setupCamera()
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { granted in
