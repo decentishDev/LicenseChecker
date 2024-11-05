@@ -44,10 +44,17 @@ class SettingsVC: UIViewController, UIDocumentPickerDelegate {
             dataset = []
             save()
         }
+        
+        let gesture = UITapGestureRecognizer(target: self, action: #selector(touchBackground(_:)))
+        view.addGestureRecognizer(gesture)
+    }
+    
+    @objc func touchBackground(_ sender: UITapGestureRecognizer){
+        widthRatioField.resignFirstResponder()
+        heightRatioField.resignFirstResponder()
     }
     
     @IBAction func sliderChanged(_ sender: UISlider) {
-        
         padding = CGFloat(1 - sender.value)
         
         save()
@@ -91,6 +98,7 @@ class SettingsVC: UIViewController, UIDocumentPickerDelegate {
             do {
                 let fileContent = try String(contentsOf: fileURL, encoding: .utf8)
                 dataset = parseCSV(fileContent)
+                save()
                 print("File content: \(fileContent)")
             } catch {
                 print("Error reading file: \(error)")

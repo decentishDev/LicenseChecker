@@ -27,9 +27,13 @@ class ViewController: UIViewController {
     var whRatio: CGFloat = 2
     
     var shouldDisplayPreview = false
+    
+    var overlay = UIView()
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overlay = UIView(frame: view.bounds)
+        view.addSubview(overlay)
         checkCameraPermission()
     }
     
@@ -41,10 +45,14 @@ class ViewController: UIViewController {
             if let data = defaults.object(forKey: "settings") as? [String: Any]{
                 padding = data["padding"]! as! CGFloat
                 whRatio = (data["width"]! as! CGFloat) / (data["height"]! as! CGFloat)
-                authorizedPlates = (data["dataset"]! as! [[String]])[0]
-                if authorizedPlates.isEmpty {
-                    
+                let data = data["dataset"]! as! [[String]]
+                if !data.isEmpty {
+                    authorizedPlates = data[0]
+                    if authorizedPlates.isEmpty {
+                        
+                    }
                 }
+                
             }else{
                 padding = 0.25
                 whRatio = 2
@@ -115,7 +123,7 @@ class ViewController: UIViewController {
 //        if view.bounds.width > view.bounds.height {
 //            previewLayer.setAffineTransform(CGAffineTransform(rotationAngle: -1 * (.pi / 2)))
 //        }
-        
+        view.addSubview(overlay)
         setupOverlayViews()
         setupRegionOverlay()
         setupTextLabel()
@@ -123,6 +131,7 @@ class ViewController: UIViewController {
             setupDownscaledImageView()
         }
         setupSettingsButton()
+        setupTableButton()
     }
     
     func setupSettingsButton(){
@@ -137,9 +146,25 @@ class ViewController: UIViewController {
         view.addSubview(settingsImage)
     }
     
+    func setupTableButton(){
+        let tableButton = UIButton(frame: CGRect(x: view.frame.width - 100, y: view.frame.height - 100, width: 50, height: 50))
+        tableButton.addTarget(self, action: #selector(self.TableButton(sender:)), for: .touchUpInside)
+        view.addSubview(tableButton)
+        
+        let tableImage = UIImageView(frame: CGRect(x: view.frame.width - 90, y: view.frame.height - 90, width: 30, height: 30))
+        tableImage.image = UIImage(systemName: "table")
+        tableImage.tintColor = .label
+        tableImage.contentMode = .scaleAspectFit
+        view.addSubview(tableImage)
+    }
+    
     @objc func SettingsButton(sender: UIButton){
-            performSegue(withIdentifier: "showSettings", sender: nil)
-        }
+        performSegue(withIdentifier: "showSettings", sender: nil)
+    }
+    
+    @objc func TableButton(sender: UIButton){
+        performSegue(withIdentifier: "showTable", sender: nil)
+    }
     
     func setupDownscaledImageView() {
         downscaledImageView = UIImageView()
@@ -196,14 +221,13 @@ class ViewController: UIViewController {
     }
 
     func setupRegionOverlay() {
-        let overlay = UIView(frame: view.bounds)
         overlay.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         overlay.isUserInteractionEnabled = false
 
         let vW = CGFloat(videoDimensions.width)
         let vH = CGFloat(videoDimensions.height)
-        videoX = vW * 0.25
-        videoW = vW * 0.5
+        videoX = vW * padding
+        videoW = vW * (1 - (2 * padding))
         videoH = videoW / whRatio
         videoY = (vH - videoH)/2
 
@@ -222,9 +246,6 @@ class ViewController: UIViewController {
         maskLayer.path = overlayPath.cgPath
         maskLayer.fillRule = .evenOdd
         overlay.layer.mask = maskLayer
-
-        view.addSubview(overlay)
-        self.overlayView = overlay
     }
     
     func setupTextLabel() {
@@ -273,8 +294,8 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         
         let bufferWidth = CGFloat(CVPixelBufferGetWidth(pixelBuffer))
         let bufferHeight = CGFloat(CVPixelBufferGetHeight(pixelBuffer))
-        videoX = bufferWidth * 0.25
-        videoW = bufferWidth * 0.5
+        videoX = bufferWidth * padding
+        videoW = bufferWidth * (1 - (2 * padding))
         videoH = videoW / whRatio
         videoY = (bufferHeight - videoH)/2
         
@@ -466,6 +487,24 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     }
     
     @IBAction func cancel (_ unwindSegue: UIStoryboardSegue){
+        if let data = defaults.object(forKey: "settings") as? [String: Any]{
+            padding = data["padding"]! as! CGFloat
+            whRatio = (data["width"]! as! CGFloat) / (data["height"]! as! CGFloat)
+            let data = data["dataset"]! as! [[String]]
+            if !data.isEmpty {
+                authorizedPlates = data[0]
+                if authorizedPlates.isEmpty {
+
+                }
+            }else{
+                authorizedPlates = []
+            }
             
+        }else{
+            padding = 0.25
+            whRatio = 2
+        }
+        setupRegionOverlay()
+        
     }
 }

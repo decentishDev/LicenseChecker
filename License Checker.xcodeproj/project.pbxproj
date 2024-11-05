@@ -17,6 +17,7 @@
 		0E1BA1102C88C29B001853F3 /* License_CheckerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E1BA10F2C88C29B001853F3 /* License_CheckerUITests.swift */; };
 		0E1BA1122C88C29B001853F3 /* License_CheckerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E1BA1112C88C29B001853F3 /* License_CheckerUITestsLaunchTests.swift */; };
 		8D5BD6B82C8E8044007F6165 /* SettingsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D5BD6B72C8E8044007F6165 /* SettingsVC.swift */; };
+		8D6DE4A72CD9D10B0089150C /* TableVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6DE4A62CD9D10B0089150C /* TableVC.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +52,7 @@
 		0E1BA10F2C88C29B001853F3 /* License_CheckerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = License_CheckerUITests.swift; sourceTree = "<group>"; };
 		0E1BA1112C88C29B001853F3 /* License_CheckerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = License_CheckerUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		8D5BD6B72C8E8044007F6165 /* SettingsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVC.swift; sourceTree = "<group>"; };
+		8D6DE4A62CD9D10B0089150C /* TableVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableVC.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -109,6 +111,7 @@
 				0E1BA0F92C88C29B001853F3 /* LaunchScreen.storyboard */,
 				0E1BA0FC2C88C29B001853F3 /* Info.plist */,
 				8D5BD6B72C8E8044007F6165 /* SettingsVC.swift */,
+				8D6DE4A62CD9D10B0089150C /* TableVC.swift */,
 			);
 			path = "License Checker";
 			sourceTree = "<group>";
@@ -264,6 +267,7 @@
 				0E1BA0F32C88C29A001853F3 /* ViewController.swift in Sources */,
 				8D5BD6B82C8E8044007F6165 /* SettingsVC.swift in Sources */,
 				0E1BA0EF2C88C29A001853F3 /* AppDelegate.swift in Sources */,
+				8D6DE4A72CD9D10B0089150C /* TableVC.swift in Sources */,
 				0E1BA0F12C88C29A001853F3 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
