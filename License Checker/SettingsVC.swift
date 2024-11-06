@@ -107,14 +107,22 @@ class SettingsVC: UIViewController, UIDocumentPickerDelegate {
     }
     
     func parseCSV(_ content: String) -> [[String]] {
-        print(content)
-        var result: [[String]] = []
-        let rows = content.components(separatedBy: "\n")
+        let rows = content.components(separatedBy: "\n").filter {!$0.isEmpty}
+        
+        guard let firstRow = rows.first else {return [] }
+        
+        let columnCount = firstRow.description.components(separatedBy: ",").count
+        
+        var columns = Array(repeating: [String](), count: columnCount)
+        
         for row in rows {
-            let columns = row.components(separatedBy: ",")
-            result.append(columns)
+            let values = row.components(separatedBy: ",")
+            for (index, value) in values.enumerated(){
+                columns[index].append(value.description.trimmingCharacters(in: .whitespacesAndNewlines))
+            }
         }
-        return result
+        
+        return columns
     }
 
     

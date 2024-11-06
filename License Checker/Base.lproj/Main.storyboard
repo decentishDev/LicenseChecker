@@ -46,36 +46,18 @@
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain"/>
                                 <connections>
-                                    <action selector="cancel:" destination="Rfj-11-fDQ" eventType="touchUpInside" id="Ujm-YQ-eDD"/>
+                                    <action selector="cancel:" destination="Rfj-11-fDQ" eventType="touchUpInside" id="IXk-fu-pbm"/>
+                                    <segue destination="3bP-fk-Suj" kind="unwind" unwindAction="cancel:" id="Vcd-aa-iNa"/>
                                 </connections>
                             </button>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Dataset" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vSc-o2-aaP">
-                                <rect key="frame" x="30" y="73" width="833" height="45"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="37"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="uXD-Nf-Sda">
-                                <rect key="frame" x="30" y="126" width="1050" height="688"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <subviews>
-                                    <stackView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="9FG-4g-bT0">
-                                        <rect key="frame" x="0.0" y="0.0" width="1050" height="688"/>
-                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                    </stackView>
-                                </subviews>
-                                <viewLayoutGuide key="contentLayoutGuide" id="P5v-Yk-TbK"/>
-                                <viewLayoutGuide key="frameLayoutGuide" id="uJm-nW-7eo"/>
-                            </scrollView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="n1A-fc-0Go"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <navigationItem key="navigationItem" id="6TI-z7-4VB"/>
                     <connections>
-                        <outlet property="stackView" destination="9FG-4g-bT0" id="CcZ-sn-eko"/>
-                        <segue destination="3bP-fk-Suj" kind="unwind" unwindAction="cancel:" id="Nuy-mb-c2B"/>
+                        <outlet property="backButton" destination="tHu-kW-y5M" id="H2N-QF-vgi"/>
+                        <outlet property="backImage" destination="NNx-Wu-2Rg" id="ad2-xj-o5n"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="a7V-oD-aRE" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -98,16 +80,6 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="leading" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dhg-mc-eez">
-                                <rect key="frame" x="1030" y="69" width="50" height="50"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain"/>
-                                <connections>
-                                    <action selector="cancel:" destination="6ju-bJ-eiu" eventType="touchUpInside" id="awh-hM-gvC"/>
-                                    <segue destination="eTH-n1-Mnd" kind="unwind" unwindAction="cancel:" id="haq-EL-qCw"/>
-                                </connections>
-                            </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Selection box size" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="u34-Me-Uhu">
                                 <rect key="frame" x="30" y="152" width="209" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -176,6 +148,16 @@
                                 <rect key="frame" x="1040" y="79" width="30" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                             </imageView>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="leading" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dhg-mc-eez">
+                                <rect key="frame" x="1030" y="69" width="50" height="50"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain"/>
+                                <connections>
+                                    <action selector="cancel:" destination="6ju-bJ-eiu" eventType="touchUpInside" id="awh-hM-gvC"/>
+                                    <segue destination="eTH-n1-Mnd" kind="unwind" unwindAction="cancel:" id="haq-EL-qCw"/>
+                                </connections>
+                            </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Uploaded file should be a .csv, and all license plates should be in first column." textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="p4Q-8O-gGU">
                                 <rect key="frame" x="30" y="288" width="1052" height="35"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
