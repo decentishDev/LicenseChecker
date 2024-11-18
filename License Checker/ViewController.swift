@@ -50,6 +50,10 @@ class ViewController: UIViewController {
                     authorizedPlates = data[0]
                     if authorizedPlates.isEmpty {
                         
+                    }else{
+                        for (i, item) in authorizedPlates.enumerated(){
+                            authorizedPlates[i] = getNormalizedString(from: item)
+                        }
                     }
                 }
                 
@@ -265,8 +269,10 @@ class ViewController: UIViewController {
 
     func handleDetectedText(_ text: String) {
         DispatchQueue.main.async {
+            
+            let normalizedText = self.getNormalizedString(from: text)
             self.textLabel.text = text
-            if self.authorizedPlates.contains(text) {
+            if self.authorizedPlates.contains(normalizedText) {
                 self.greenRectView.layer.opacity = 1
             } else {
                 if self.greenRectView.layer.opacity != 0 {
@@ -393,7 +399,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         
         let greenFilter = CIFilter(name: "CIColorMatrix")!
         greenFilter.setValue(downscaledCIImage, forKey: kCIInputImageKey)
-        greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputRVector") // Ignore red
+        greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputRVector")
         greenFilter.setValue(CIVector(x: 0, y: 1, z: 0, w: 0), forKey: "inputGVector")
         greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputBVector")
         greenFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
@@ -401,7 +407,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         
         let blueFilter = CIFilter(name: "CIColorMatrix")!
         blueFilter.setValue(downscaledCIImage, forKey: kCIInputImageKey)
-        blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputRVector") // Ignore red
+        blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputRVector")
         blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputGVector")
         blueFilter.setValue(CIVector(x: 0, y: 0, z: 1, w: 0), forKey: "inputBVector")
         blueFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
@@ -419,43 +425,35 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     }
     
     func enhanceRedText(in image: CIImage) -> CIImage? {
-        // Create a Core Image context
         let context = CIContext(options: nil)
-        
-        // Step 1: Increase saturation to enhance red colors
+
         guard let saturationFilter = CIFilter(name: "CIColorControls") else { return nil }
         saturationFilter.setValue(image, forKey: kCIInputImageKey)
-        saturationFilter.setValue(1.5, forKey: kCIInputSaturationKey)  // Increase saturation
-        saturationFilter.setValue(0.0, forKey: kCIInputBrightnessKey)   // No change to brightness
-        saturationFilter.setValue(1.0, forKey: kCIInputContrastKey)     // Adjust contrast as needed
+        saturationFilter.setValue(1.5, forKey: kCIInputSaturationKey)
+        saturationFilter.setValue(0.0, forKey: kCIInputBrightnessKey)
+        saturationFilter.setValue(1.0, forKey: kCIInputContrastKey)
         
         guard let saturatedImage = saturationFilter.outputImage else { return nil }
         
-        // Step 2: Apply hue adjustment to emphasize reds
         guard let hueFilter = CIFilter(name: "CIHueAdjust") else { return nil }
         hueFilter.setValue(saturatedImage, forKey: kCIInputImageKey)
-        hueFilter.setValue(0.0, forKey: kCIInputAngleKey)  // Keep hue as-is for red
+        hueFilter.setValue(0.0, forKey: kCIInputAngleKey)
 
         guard let hueAdjustedImage = hueFilter.outputImage else { return nil }
         
-        // Step 3: Brighten the white areas
         guard let exposureFilter = CIFilter(name: "CIExposureAdjust") else { return nil }
         exposureFilter.setValue(hueAdjustedImage, forKey: kCIInputImageKey)
-        exposureFilter.setValue(0.7, forKey: kCIInputEVKey)  // Increase exposure to brighten white
+        exposureFilter.setValue(0.7, forKey: kCIInputEVKey)
         
         guard let brightenedImage = exposureFilter.outputImage else { return nil }
 
-        // Render the final image
         return brightenedImage
     }
     
     func increaseContrast(of inputImage: CIImage, contrast: Float) -> CIImage? {
-        // Apply the CIColorControls filter to adjust contrast
         let contrastFilter = CIFilter(name: "CIColorControls")
         contrastFilter?.setValue(inputImage, forKey: kCIInputImageKey)
-        contrastFilter?.setValue(contrast, forKey: kCIInputContrastKey) // Default contrast is 1.0, values > 1 increase contrast
-
-        // Get the output image from the filter
+        contrastFilter?.setValue(contrast, forKey: kCIInputContrastKey)
         guard let outputImage = contrastFilter?.outputImage else {
             return nil
         }
@@ -494,7 +492,11 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
             if !data.isEmpty {
                 authorizedPlates = data[0]
                 if authorizedPlates.isEmpty {
-
+                    
+                }else{
+                    for (i, item) in authorizedPlates.enumerated(){
+                        authorizedPlates[i] = getNormalizedString(from: item)
+                    }
                 }
             }else{
                 authorizedPlates = []
@@ -506,5 +508,11 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
         setupRegionOverlay()
         
+    }
+    
+    private func getNormalizedString(from input: String) -> String {
+        let lowercased = input.lowercased()
+        let noSpaces = lowercased.replacingOccurrences(of: " ", with: "")
+        return noSpaces
     }
 }
