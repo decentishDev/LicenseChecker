@@ -53,6 +53,7 @@ class ViewController: UIViewController {
                     }else{
                         for (i, item) in authorizedPlates.enumerated(){
                             authorizedPlates[i] = getNormalizedString(from: item)
+                            print(authorizedPlates)
                         }
                     }
                 }
@@ -269,9 +270,8 @@ class ViewController: UIViewController {
 
     func handleDetectedText(_ text: String) {
         DispatchQueue.main.async {
-            
             let normalizedText = self.getNormalizedString(from: text)
-            self.textLabel.text = text
+            self.textLabel.text = normalizedText
             if self.authorizedPlates.contains(normalizedText) {
                 self.greenRectView.layer.opacity = 1
             } else {
@@ -280,6 +280,12 @@ class ViewController: UIViewController {
                 }
             }
         }
+    }
+    
+    private func getNormalizedString(from input: String) -> String {
+        let lowercased = input.lowercased()
+        let noSpaces = lowercased.replacingOccurrences(of: " ", with: "")
+        return noSpaces
     }
 }
 
@@ -508,11 +514,5 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
         setupRegionOverlay()
         
-    }
-    
-    private func getNormalizedString(from input: String) -> String {
-        let lowercased = input.lowercased()
-        let noSpaces = lowercased.replacingOccurrences(of: " ", with: "")
-        return noSpaces
     }
 }

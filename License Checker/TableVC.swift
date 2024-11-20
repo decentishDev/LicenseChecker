@@ -1,57 +1,63 @@
 import UIKit
 
-class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate {
     
     @IBOutlet weak var backButton: UIButton!
     @IBOutlet weak var backImage: UIImageView!
     var data: [[String]] = []
     var rows: [[String]] = []
-    
+    var filteredRows: [[String]] = []
     private let tableView = UITableView()
     private let scrollView = UIScrollView()
+    private let searchBar = UISearchBar()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Load dataset from UserDefaults
         if let settings = UserDefaults.standard.object(forKey: "settings") as? [String: Any],
            let dataset = settings["dataset"] as? [[String]], !dataset.isEmpty {
             self.data = dataset
         }
         
-        // Transpose the data for correct row/column layout
         rows = transpose(array: data)
+        filteredRows = rows
         
-        // Configure the scroll view
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        searchBar.delegate = self
+        searchBar.placeholder = "Search license plates or other data"
+        view.addSubview(searchBar)
+        
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
         
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            searchBar.heightAnchor.constraint(equalToConstant: 44),
+            
+            scrollView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
         
-        // Configure the table view
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.isScrollEnabled = false // Disable internal scrolling to allow UIScrollView control
+        tableView.isScrollEnabled = false
         
-        // Register a custom cell
         tableView.register(SpreadsheetCell.self, forCellReuseIdentifier: "SpreadsheetCell")
         
         scrollView.addSubview(tableView)
         
-        // Set content size of scroll view based on data
-        let contentWidth = CGFloat(rows.first?.count ?? 0) * 100.0 // Adjust 100.0 to fit your preferred cell width
-        let contentHeight = CGFloat(rows.count) * 44.0 // 44.0 is a standard cell height
+        let contentWidth = CGFloat(rows.first?.count ?? 0) * 150.0
+        let contentHeight = CGFloat(rows.count) * 50.0
         
         scrollView.contentSize = CGSize(width: contentWidth, height: contentHeight)
         
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 100),
+            tableView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             tableView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
@@ -64,7 +70,7 @@ class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
         backButton.removeFromSuperview()
         view.addSubview(backButton)
     }
-    
+
     func transpose(array: [[String]]) -> [[String]] {
         guard let firstRow = array.first else { return [] }
         return firstRow.indices.map { index in
@@ -72,10 +78,8 @@ class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
-    // MARK: - TableView DataSource Methods
-    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return rows.count
+        return filteredRows.count
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {
@@ -85,8 +89,7 @@ class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "SpreadsheetCell", for: indexPath) as! SpreadsheetCell
         
-        // Configure cell with row data
-        let rowData = rows[indexPath.row]
+        let rowData = filteredRows[indexPath.row]
         cell.configure(with: rowData)
         
         return cell
@@ -96,12 +99,41 @@ class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
         return 44.0
     }
     
-    @IBAction func cancel (_ unwindSegue: UIStoryboardSegue){
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        let normalizedSearchText = searchText.replacingOccurrences(of: " ", with: "").lowercased()
         
+        if normalizedSearchText.isEmpty {
+            filteredRows = rows
+        } else {
+            filteredRows = rows.filter { row in
+                row.contains { $0.replacingOccurrences(of: " ", with: "").lowercased().contains(normalizedSearchText) }
+            }
+        }
+        tableView.reloadData()
+        
+        scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: true)
+    }
+
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+        
+        if let searchText = searchBar.text, !searchText.isEmpty {
+            let normalizedSearchText = searchText.replacingOccurrences(of: " ", with: "").lowercased()
+            
+            if let index = filteredRows.firstIndex(where: { row in
+                row.contains { $0.replacingOccurrences(of: " ", with: "").lowercased().contains(normalizedSearchText) }
+            }) {
+                let indexPath = IndexPath(row: index, section: 0)
+                tableView.scrollToRow(at: indexPath, at: .top, animated: true)
+            }
+        }
+    }
+
+    
+    @IBAction func cancel(_ unwindSegue: UIStoryboardSegue) {
     }
 }
 
-// Custom UITableViewCell for spreadsheet-style layout
 class SpreadsheetCell: UITableViewCell {
     
     private var labels: [UILabel] = []
@@ -133,11 +165,9 @@ class SpreadsheetCell: UITableViewCell {
     }
     
     func configure(with row: [String]) {
-        // Remove old labels
         labels.forEach { $0.removeFromSuperview() }
         labels = []
         
-        // Add new labels for each column in the row
         for text in row {
             let label = UILabel()
             label.text = text
