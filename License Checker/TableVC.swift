@@ -69,6 +69,12 @@ class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource, UIS
         view.addSubview(backImage)
         backButton.removeFromSuperview()
         view.addSubview(backButton)
+        let gesture = UITapGestureRecognizer(target: self, action: #selector(touchBackground(_:)))
+        view.addGestureRecognizer(gesture)
+    }
+    
+    @objc func touchBackground(_ sender: UITapGestureRecognizer){
+        searchBar.resignFirstResponder()
     }
 
     func transpose(array: [[String]]) -> [[String]] {

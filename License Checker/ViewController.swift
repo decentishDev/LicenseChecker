@@ -53,7 +53,6 @@ class ViewController: UIViewController {
                     }else{
                         for (i, item) in authorizedPlates.enumerated(){
                             authorizedPlates[i] = getNormalizedString(from: item)
-                            print(authorizedPlates)
                         }
                     }
                 }
@@ -271,7 +270,7 @@ class ViewController: UIViewController {
     func handleDetectedText(_ text: String) {
         DispatchQueue.main.async {
             let normalizedText = self.getNormalizedString(from: text)
-            self.textLabel.text = normalizedText
+            self.textLabel.text = text
             if self.authorizedPlates.contains(normalizedText) {
                 self.greenRectView.layer.opacity = 1
             } else {
@@ -339,7 +338,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
                 for result in results {
                     guard let candidate = result.topCandidates(1).first else { continue }
                     let detectedText = candidate.string
-                    if self.authorizedPlates.contains(detectedText) {
+                    if self.authorizedPlates.contains(self.getNormalizedString(from: detectedText)) {
                         anyGood = true
                         lastThing = detectedText
                     }
