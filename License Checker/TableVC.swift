@@ -2,8 +2,8 @@ import UIKit
 
 class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate {
     
-    @IBOutlet weak var backButton: UIButton!
-    @IBOutlet weak var backImage: UIImageView!
+    var backButton: UIButton!
+    var backImage: UIImageView!
     var data: [[String]] = []
     var rows: [[String]] = []
     var filteredRows: [[String]] = []
@@ -30,11 +30,31 @@ class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource, UIS
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
         
+        backImage = UIImageView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
+        backImage.translatesAutoresizingMaskIntoConstraints = false
+        backImage.image = UIImage(systemName: "xmark")
+        backButton = UIButton(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
+        backButton.translatesAutoresizingMaskIntoConstraints = false
+        backButton.addTarget(self, action: #selector(self.tableUnwind(sender:)), for: .touchUpInside)
+        
+        view.addSubview(backImage)
+        view.addSubview(backButton)
+        
         NSLayoutConstraint.activate([
             searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            searchBar.heightAnchor.constraint(equalToConstant: 44),
+            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -50),
+            searchBar.heightAnchor.constraint(equalToConstant: 50),
+            
+            backButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            backButton.leadingAnchor.constraint(equalTo: searchBar.leadingAnchor),
+            backButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            backImage.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            backImage.leadingAnchor.constraint(equalTo: searchBar.leadingAnchor),
+            backImage.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backImage.heightAnchor.constraint(equalToConstant: 50),
             
             scrollView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -75,6 +95,10 @@ class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource, UIS
     
     @objc func touchBackground(_ sender: UITapGestureRecognizer){
         searchBar.resignFirstResponder()
+    }
+    
+    @objc func tableUnwind(sender: UIButton){
+        performSegue(withIdentifier: "tableUnwind", sender: nil)
     }
 
     func transpose(array: [[String]]) -> [[String]] {

@@ -35,33 +35,12 @@
                     <view key="view" contentMode="scaleToFill" id="faQ-4H-RO4">
                         <rect key="frame" x="0.0" y="0.0" width="1112" height="834"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="xmark" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="NNx-Wu-2Rg">
-                                <rect key="frame" x="1040" y="79" width="30" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                            </imageView>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="leading" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tHu-kW-y5M">
-                                <rect key="frame" x="1030" y="69" width="50" height="50"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain"/>
-                                <connections>
-                                    <action selector="cancel:" destination="Rfj-11-fDQ" eventType="touchUpInside" id="IXk-fu-pbm"/>
-                                    <segue destination="3bP-fk-Suj" kind="unwind" unwindAction="cancel:" id="Vcd-aa-iNa"/>
-                                </connections>
-                            </button>
-                        </subviews>
                         <viewLayoutGuide key="safeArea" id="n1A-fc-0Go"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <navigationItem key="navigationItem" id="6TI-z7-4VB"/>
-                    <connections>
-                        <outlet property="backButton" destination="tHu-kW-y5M" id="H2N-QF-vgi"/>
-                        <outlet property="backImage" destination="NNx-Wu-2Rg" id="ad2-xj-o5n"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="a7V-oD-aRE" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
-                <exit id="3bP-fk-Suj" userLabel="Exit" sceneMemberID="exit"/>
             </objects>
             <point key="canvasLocation" x="80.935251798561154" y="830.93525179856124"/>
         </scene>
