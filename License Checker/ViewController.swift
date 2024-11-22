@@ -10,8 +10,7 @@ class ViewController: UIViewController {
     var captureSession: AVCaptureSession!
     var previewLayer: AVCaptureVideoPreviewLayer!
     var authorizedPlates: [String] = []
-    var greenRectView: UIView!
-    var redRectView: UIView!
+    var greenBorderLayer: CAShapeLayer!
     var overlayView: UIView!
     var lastDetectionTime = Date()
     var textLabel: UILabel!
@@ -27,6 +26,8 @@ class ViewController: UIViewController {
     var whRatio: CGFloat = 2
     
     var shouldDisplayPreview = false
+    
+    var currentColor: CGFloat = 0
     
     var overlay = UIView()
 
@@ -128,7 +129,6 @@ class ViewController: UIViewController {
 //            previewLayer.setAffineTransform(CGAffineTransform(rotationAngle: -1 * (.pi / 2)))
 //        }
         view.addSubview(overlay)
-        setupOverlayViews()
         setupRegionOverlay()
         setupTextLabel()
         if shouldDisplayPreview {
@@ -178,20 +178,6 @@ class ViewController: UIViewController {
         downscaledImageView.layer.borderColor = UIColor.white.cgColor
         view.addSubview(downscaledImageView)
     }
-
-    func setupOverlayViews() {
-
-        redRectView = UIView(frame: CGRect(x: 60, y: 60, width: 40, height: 40))
-        redRectView.layer.cornerRadius = 10
-        redRectView.backgroundColor = .red
-        view.addSubview(redRectView)
-        
-        greenRectView = UIView(frame: CGRect(x: 60, y: 60, width: 40, height: 40))
-        greenRectView.layer.cornerRadius = 10
-        greenRectView.backgroundColor = .green
-        greenRectView.layer.opacity = 0
-        view.addSubview(greenRectView)
-    }
     
     func cameraToScreen(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
         let sW = CGFloat(view.bounds.width)
@@ -233,15 +219,15 @@ class ViewController: UIViewController {
         videoX = vW * padding
         videoW = vW * (1 - (2 * padding))
         videoH = videoW / whRatio
-        videoY = (vH - videoH)/2
+        videoY = (vH - videoH) / 2
 
         let screenPoint = cameraToScreen(videoX, videoY)
         let otherPoint = cameraToScreen(videoX + videoW, videoY + videoH)
 
         let regionRect = CGRect(x: screenPoint.x, y: screenPoint.y, width: otherPoint.x - screenPoint.x, height: otherPoint.y - screenPoint.y)
         let cornerRadius: CGFloat = 10
-        let regionOfInterestPath = UIBezierPath(roundedRect: regionRect, cornerRadius: cornerRadius)
 
+        let regionOfInterestPath = UIBezierPath(roundedRect: regionRect, cornerRadius: cornerRadius)
         let overlayPath = UIBezierPath(rect: overlay.bounds)
         overlayPath.append(regionOfInterestPath)
         overlayPath.usesEvenOddFillRule = true
@@ -250,15 +236,23 @@ class ViewController: UIViewController {
         maskLayer.path = overlayPath.cgPath
         maskLayer.fillRule = .evenOdd
         overlay.layer.mask = maskLayer
+
+        greenBorderLayer = CAShapeLayer()
+        greenBorderLayer.path = regionOfInterestPath.cgPath
+        greenBorderLayer.lineWidth = 7.0
+        greenBorderLayer.strokeColor = CGColor(red: 1, green: 0, blue: 0, alpha: 1)
+        greenBorderLayer.fillColor = UIColor.clear.cgColor
+        greenBorderLayer.opacity = 1
+        overlay.layer.addSublayer(greenBorderLayer)
     }
     
     func setupTextLabel() {
-        let backgroundColor = UIView(frame: CGRect(x: 110, y: 60, width: view.bounds.width - 170, height: 40))
+        let backgroundColor = UIView(frame: CGRect(x: 60, y: 60, width: view.bounds.width - 120, height: 40))
         backgroundColor.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         backgroundColor.layer.cornerRadius = 10
         view.addSubview(backgroundColor)
         textLabel = UILabel()
-        textLabel.frame = CGRect(x: 110, y: 50 + 10, width: view.bounds.width - 170, height: 40)
+        textLabel.frame = CGRect(x: 60, y: 60, width: view.bounds.width - 120, height: 40)
         //textLabel.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         textLabel.textColor = .white
         textLabel.textAlignment = .center
@@ -272,12 +266,13 @@ class ViewController: UIViewController {
             let normalizedText = self.getNormalizedString(from: text)
             self.textLabel.text = text
             if self.authorizedPlates.contains(normalizedText) {
-                self.greenRectView.layer.opacity = 1
+                self.currentColor = 1
             } else {
-                if self.greenRectView.layer.opacity != 0 {
-                    self.greenRectView.layer.opacity -= 0.1
+                if self.currentColor != 0 {
+                    self.currentColor -= 0.1
                 }
             }
+            self.greenBorderLayer.strokeColor = CGColor(red: 1 - self.currentColor, green: self.currentColor, blue: 0, alpha: 1)
         }
     }
     
