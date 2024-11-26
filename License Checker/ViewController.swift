@@ -485,6 +485,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     }
     
     @IBAction func cancel (_ unwindSegue: UIStoryboardSegue){
+        greenBorderLayer.removeFromSuperlayer()
         if let data = defaults.object(forKey: "settings") as? [String: Any]{
             padding = data["padding"]! as! CGFloat
             whRatio = (data["width"]! as! CGFloat) / (data["height"]! as! CGFloat)
