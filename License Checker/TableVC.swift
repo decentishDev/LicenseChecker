@@ -22,76 +22,67 @@ class TableVC: UIViewController, UITableViewDelegate, UITableViewDataSource, UIS
         rows = transpose(array: data)
         filteredRows = rows
         
-        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        let safeAreaInsets = self.view.safeAreaInsets
+        //let safeTop = safeAreaInsets.top
+        let safeTop = UserDefaults.standard.object(forKey: "topPadding") as! CGFloat
+        let screenWidth = UIScreen.main.bounds.width
+        
+        let searchBarHeight: CGFloat = 50
+        searchBar.frame = CGRect(
+            x: 10,
+            y: safeTop + 10,
+            width: screenWidth - 70,
+            height: searchBarHeight
+        )
         searchBar.delegate = self
-        searchBar.placeholder = "Search license plates or other data"
+        searchBar.placeholder = "License plate or other data"
+        searchBar.searchTextField.backgroundColor = .secondarySystemBackground // Set the desired background color
+        searchBar.searchTextField.layer.borderWidth = 0    // Remove the border
+        searchBar.searchTextField.layer.cornerRadius = 10  // Optional: Add some rounding to match modern UI styles
+        searchBar.backgroundImage = UIImage()             // Remove the background image to eliminate outlines
+        searchBar.layer.borderWidth = 0                   // Remove outer border if present
+
         view.addSubview(searchBar)
         
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(scrollView)
-        
-        backImage = UIImageView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
-        backImage.translatesAutoresizingMaskIntoConstraints = false
-        backImage.image = UIImage(systemName: "xmark")
-        backButton = UIButton(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
-        backButton.translatesAutoresizingMaskIntoConstraints = false
+        let buttonSize: CGFloat = 40
+        backButton = UIButton(frame: CGRect(
+            x: screenWidth - 50,
+            y: safeTop + 15,
+            width: buttonSize,
+            height: buttonSize
+        ))
+        backButton.setImage(UIImage(systemName: "xmark"), for: .normal)
         backButton.addTarget(self, action: #selector(self.tableUnwind(sender:)), for: .touchUpInside)
-        
-        view.addSubview(backImage)
         view.addSubview(backButton)
         
-        NSLayoutConstraint.activate([
-            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -50),
-            searchBar.heightAnchor.constraint(equalToConstant: 50),
-            
-            backButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            backButton.leadingAnchor.constraint(equalTo: searchBar.leadingAnchor),
-            backButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            backButton.heightAnchor.constraint(equalToConstant: 50),
-            
-            backImage.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            backImage.leadingAnchor.constraint(equalTo: searchBar.leadingAnchor),
-            backImage.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            backImage.heightAnchor.constraint(equalToConstant: 50),
-            
-            scrollView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
+        scrollView.frame = CGRect(
+            x: 0,
+            y: searchBar.frame.maxY + 10,
+            width: screenWidth,
+            height: view.frame.height - (searchBar.frame.maxY + 10)
+        )
+        view.addSubview(scrollView)
         
-        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.frame = CGRect(
+            x: 0,
+            y: 0,
+            width: CGFloat(rows.first?.count ?? 0) * 150.0,
+            height: CGFloat(rows.count) * 50.0
+        )
         tableView.delegate = self
         tableView.dataSource = self
         tableView.isScrollEnabled = false
-        
         tableView.register(SpreadsheetCell.self, forCellReuseIdentifier: "SpreadsheetCell")
-        
         scrollView.addSubview(tableView)
         
-        let contentWidth = CGFloat(rows.first?.count ?? 0) * 150.0
-        let contentHeight = CGFloat(rows.count) * 50.0
+        scrollView.contentSize = tableView.frame.size
         
-        scrollView.contentSize = CGSize(width: contentWidth, height: contentHeight)
-        
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            tableView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            tableView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            tableView.widthAnchor.constraint(equalToConstant: contentWidth),
-            tableView.heightAnchor.constraint(equalToConstant: contentHeight)
-        ])
-        
-        backImage.removeFromSuperview()
-        view.addSubview(backImage)
-        backButton.removeFromSuperview()
-        view.addSubview(backButton)
+        // Add tap gesture recognizer
         let gesture = UITapGestureRecognizer(target: self, action: #selector(touchBackground(_:)))
         view.addGestureRecognizer(gesture)
     }
+
+
     
     @objc func touchBackground(_ sender: UITapGestureRecognizer){
         searchBar.resignFirstResponder()

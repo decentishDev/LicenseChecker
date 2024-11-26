@@ -39,8 +39,12 @@
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <navigationItem key="navigationItem" id="6TI-z7-4VB"/>
+                    <connections>
+                        <segue destination="DSb-Ke-tvo" kind="unwind" identifier="tableUnwind" unwindAction="cancel:" id="mBn-hF-lBj"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="a7V-oD-aRE" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+                <exit id="DSb-Ke-tvo" userLabel="Exit" sceneMemberID="exit"/>
             </objects>
             <point key="canvasLocation" x="80.935251798561154" y="830.93525179856124"/>
         </scene>

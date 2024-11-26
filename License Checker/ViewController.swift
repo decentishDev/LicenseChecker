@@ -281,6 +281,14 @@ class ViewController: UIViewController {
         let noSpaces = lowercased.replacingOccurrences(of: " ", with: "")
         return noSpaces
     }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        let safeAreaInsets = self.view.safeAreaInsets
+        UserDefaults.standard.set(safeAreaInsets.top, forKey: "topPadding")
+        
+    }
 }
 
 extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
