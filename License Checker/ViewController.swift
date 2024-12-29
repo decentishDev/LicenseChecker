@@ -31,6 +31,7 @@ class ViewController: UIViewController {
     
     var overlay = UIView()
 
+
     override func viewDidLoad() {
         super.viewDidLoad()
         overlay = UIView(frame: view.bounds)
@@ -278,8 +279,8 @@ class ViewController: UIViewController {
     
     private func getNormalizedString(from input: String) -> String {
         let lowercased = input.lowercased()
-        let noSpaces = lowercased.replacingOccurrences(of: " ", with: "")
-        return noSpaces
+        let filtered = lowercased.filter { $0.isLetter || $0.isNumber }
+        return filtered
     }
     
     override func viewDidLayoutSubviews() {
@@ -319,6 +320,8 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         let downscaleTransform = CGAffineTransform(scaleX: 0.5, y: 0.5)
         var downscaledCIImage = croppedCIImage.transformed(by: downscaleTransform)
         //downscaledCIImage = increaseContrast(of: downscaledCIImage, contrast: 2)!
+        downscaledCIImage = enhanceRedText(in: downscaledCIImage)!
+        downscaledCIImage = enhanceRedText(in: downscaledCIImage)!
         downscaledCIImage = enhanceRedText(in: downscaledCIImage)!
         downscaledCIImage = enhanceRedText(in: downscaledCIImage)!
         //downscaledCIImage = increaseContrast(of: downscaledCIImage, contrast: 2)!
